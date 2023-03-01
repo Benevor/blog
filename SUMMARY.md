@@ -21,3 +21,16 @@
 
 * [OLAP](olap-and-time-series/olap.md)
 * [InfluxDB](olap-and-time-series/influxdb.md)
+
+## DB
+
+* [TODO](db/todo.md)
+* [HTAP](db/htap.md)
+
+## Paper Reading
+
+* [列表](paper-reading/lie-biao.md)
+
+## AI
+
+* [机器学习基础](ai/ji-qi-xue-xi-ji-chu.md)
