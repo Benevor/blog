@@ -26,6 +26,7 @@
 
 * [TODO](db/todo.md)
 * [HTAP](db/htap.md)
+* [列存](db/lie-cun.md)
 
 ## Paper Reading
 
