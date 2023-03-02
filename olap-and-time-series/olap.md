@@ -3,7 +3,7 @@
 * 对象存储、块存储、文件存储（表格存储）
 * 结构化数据、半结构化数据、非结构化数据
 * ap存储引擎，ap查询引擎
-* flink、clickhouse、snowflake、[Dremel](https://searchdatabase.techtarget.com.cn/7-20806/)、doris、influxdb（阿帕奇和cncf的新项目）
+* flink、clickhouse、snowflake、[Dremel](https://searchdatabase.techtarget.com.cn/7-20806/)、doris、influxdb、selectdb（阿帕奇和cncf的新项目）
 * Apache Drill、Apache Kylin、Presto、Vertica
 * [https://github.com/datafuselabs/databend](https://github.com/datafuselabs/databend)(rust写的)
 * 《大数据技术原理与应用》
