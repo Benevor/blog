@@ -18,7 +18,8 @@
 * 学习型查询调度：LSched: A Workload-Aware Learned Query Scheduler for Analytical Database SystemsOnline Sketch-based Query Optimization
 * 流数据查询调度：Klink: Progress-Aware Scheduling for Streaming Data Systems
 * 查询调度：Adaptive NUMA-aware data placement and task scheduling for analytical workloads in main-memory column-stores
-* MonetDB/X100: Hyper-Pipelining Query Execution, Boncz et al., 2005
+* 向量化执行：MonetDB/X100: Hyper-Pipelining Query Execution, Boncz et al., 2005
+* 向量化执行：Filter Representation in Vectorized Query Execution
 * Vectorwise: a Vectorized Analytical DBMS
 * Multi-query Optimization for On-Line Analytical Processing
 * 博客：[https://www.sciencegate.app/keyword/910106](https://www.sciencegate.app/keyword/910106)
