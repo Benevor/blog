@@ -31,6 +31,7 @@
 ## Paper Reading
 
 * [列表](paper-reading/lie-biao.md)
+* [MonetDB/X100: Hyper-Pipelining Query Execution](paper-reading/monetdb-x100-hyper-pipelining-query-execution.md)
 
 ## AI
 
