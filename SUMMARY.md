@@ -32,6 +32,7 @@
 
 * [列表](paper-reading/lie-biao.md)
 * [MonetDB/X100: Hyper-Pipelining Query Execution](paper-reading/monetdb-x100-hyper-pipelining-query-execution.md)
+* [F1 Lightning: HTAP as a Service](paper-reading/f1-lightning-htap-as-a-service.md)
 
 ## AI
 
