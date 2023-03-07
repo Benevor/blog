@@ -24,6 +24,11 @@ MsgTransferLeader：local message
   * 如果不符合，help him，期间不再接收proposal
   * 如果/直至符合，向其发送 MsgTimeoutNow
 
+```
+为什么存在自己到自己的trans，没懂
+trans到底谁发起的？
+```
+
 MsgTimeoutNow：
 
 * 由转移目标接收和实现，可能是候选者或者跟随者
@@ -63,9 +68,25 @@ project3b主要任务是：完成admin commands的propose和apply（CompactLog�
 
 It will be used to guarantee the latest region information under network isolation that two leaders in one Region.（没懂）
 
+在应用所有种类的request之前，都要先检查RegionEpoch和key的信息
+
 非admin命令（get put delete snap）
 
-* apply之前要先检查RegionEpoch todo
+* CheckRegionEpoch
+* CheckKeyInRegion
+
+change peer
+
+split
+
+
+
+问题：
+
+```go
+RaftCmdRequest的region信息是哪里来的呢？
+如果是客户端，那么客户端怎么更新region信息？
+```
 
 ### ChangePeer
 
@@ -95,7 +116,18 @@ apply
 ```
 For executing AddNode, the newly added Peer will be created by heartbeat from the leader, check maybeCreatePeer() of storeWorker. At that time, this Peer is uninitialized and any information of its Region is unknown to us, so we use 0 to initialize its Log Term and Index. The leader then will know this Follower has no data (there exists a Log gap from 0 to 5) and it will directly send a snapshot to this Follower.
 （没懂）
+maybeCreatePeer没懂
+联合共识比单步变更的好处
 ```
 
 ### Split
 
+apply
+
+* 检查RegionEpoch todo
+* 检查CheckKeyInRegion todo
+* 判断peer数量
+* 修改旧region信息，建立新的region
+* 更新router和storeMeta信息
+* 持久化region信息
+* 如果本节点是leader，还要通知调度器，更新信息
