@@ -53,7 +53,7 @@ F(A[0]),F(A[1]),F(A[2]), G(A[0]),G(A[1]),G(A[2]), F(A[3]) ...
 
 可以看到，手工重写后的版本将不带有分支的if语句，因此其执行效率更高，且和选择率无关。
 
-<figure><img src="../.gitbook/assets/image (1).png" alt=""><figcaption><p>branch version -> predicated version</p></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (1) (1).png" alt=""><figcaption><p>branch version -> predicated version</p></figcaption></figure>
 
 
 
