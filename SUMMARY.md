@@ -2,10 +2,10 @@
 
 ## CMU
 
-* [CMU-15445](README.md)
+* [CMU-15721](README.md)
+* [CMU-15445](<README (1).md>)
 * [Bustub-2022](cmu/bustub-2022.md)
 * [bustub-2023](cmu/bustub-2023.md)
-* [CMU-15721](cmu/cmu-15721.md)
 
 ## TiDB
 
