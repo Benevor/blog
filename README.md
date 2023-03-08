@@ -283,7 +283,7 @@ Example: Store in an exact, variable-length binary representation with additiona
 
 所有的更新先进入NSM，最终复制到DSM镜像
 
-<figure><img src=".gitbook/assets/image.png" alt=""><figcaption><p>FRACTURED MIRRORS 示意图</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (6).png" alt=""><figcaption><p>FRACTURED MIRRORS 示意图</p></figcaption></figure>
 
 #### DELTA STORE
 
@@ -295,7 +295,7 @@ Example: Store in an exact, variable-length binary representation with additiona
 
 事务型操作面向行存；分析型查询可能需要行存和列存进行配合
 
-<figure><img src=".gitbook/assets/image (6).png" alt=""><figcaption><p>DELTA STORE 示意图</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (6) (1).png" alt=""><figcaption><p>DELTA STORE 示意图</p></figcaption></figure>
 
 ### DATABASE PARTITIONING
 
@@ -332,29 +332,71 @@ DBMS可以在物理上 （shared nothing）或逻辑上（shared disk），对�
 
 #### PARTING THOUGHTS
 
-* 现代OLAP数据库基本都在使用PAX的变体，PAX的重点是数据是定长的
+* 现代OLAP数据库基本都在使用PAX的变体，<mark style="color:red;">**PAX**</mark>的重点是数据是<mark style="color:red;">**定长**</mark>**的，以支持**<mark style="color:red;">**offset addressing**</mark>
 * 虽然现实世界的表格中数字居多，但是数据库存储中占据空间的是字符串数据
 * 现代列存系统运行很快，以至于人们不会对数据仓库的格式进行反规范化（对于DBA设计scheme的需求不再那么强烈）
 
 ## 04
 
+### AP索引与连续扫描
 
+#### AP索引与TP索引的区别
 
+* TP使用索引来查找单个tuple，而不进行连续扫描（适合低选择性的谓词；小数量tuple的查询）
+* TP索引需要支持数据增量更新
+* AP索引不需要支持单个tuple的查询，通常是连续扫描
+* AP索引假设数据文件是只读的/不可变的
 
+#### 连续扫描的优化方法
 
+* Data Prefetching
+* Task Parallelization/Multi-threading（多线程并行）
+* Clustering / Sorting
+* Late Materialization（执行模式）
+* Materialized Views / Result Caching
+* Data Skipping
+* Data Parallelization / Vectorization（SIMD）
+* Code Specialization / Compilation
 
+### DATA SKIPPING（本章后续内容都属于这种方案）
 
+#### Approximate Queries (Lossy)
 
+* 在数据表的样本子集上做精确查询，以得到近似结果
+* Examples: BlinkDB, Redshift, ComputeDB, XDB, Oracle, Snowflake,Google BigQuery, DataBricks
 
+#### Data Pruning (Loseless)（本节课关注这种方案）
 
+* 使用辅助结果来评估谓词，以快速识别可以跳过的表的部分，而不是逐一检查tuple
+* DBMS必须考虑覆盖范围与过滤效果、手动与自动之间的权衡
+  * 辅助数据覆盖范围大，通常过滤效果不好（比如维护了整张表的最小值，可能还是要扫描整张表）
+  * 覆盖范围过小，又会失去data skip带来的性能提升（比如每个tuple都维护一个flag）
 
+**使用辅助结构时需要**<mark style="color:red;">**考虑的因素**</mark>
 
+* 谓词选择性
+  * 多少tuple能满足这个查询的tuple
+* Skewness
+  * 一个属性的值是否全部unique或者包含许多重复的值
+* Clustering / Sorting
+  * 表是否根据查询的谓词所访问的属性进行预排序
 
+#### Zone Maps
 
+* 更像是一个过滤器（yes/no），而不是索引（where）
+* 事先计算出一块tuples上某个属性值的所有聚合结果
+* 最初称为Small Materialized Aggregates (SMA)
+* DBMS自动创建/维护这种元数据
 
+<figure><img src=".gitbook/assets/image.png" alt=""><figcaption><p>zone maps示意图</p></figcaption></figure>
 
+总结：
 
-
+* Trade-off between scope vs. filter efficacy
+  * 范围过大，zone maps将会没用
+  * 范围过小，查询执行时需要检查过多的zone maps
+* 如果该列上的数据太随机，也不适合（预先排序的话，效果会变好）
+  * 比如对该列划分为多个blocks，如果每个blocks的zone maps都一样，那么查询时还是要遍历所有的tuples，跳过的数据很少
 
 
 
