@@ -8,6 +8,7 @@
 * Apache Drill、Apache Kylin、Presto、Vertica
 * [https://github.com/datafuselabs/databend](https://github.com/datafuselabs/databend)(rust写的)
 * 《大数据技术原理与应用》
+* AP数据库和lsm有什么关系？influx用的lsm
 
 
 

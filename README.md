@@ -383,6 +383,12 @@ DBMS可以在物理上 （shared nothing）或逻辑上（shared disk），对�
 * Clustering / Sorting
   * 表是否根据查询的谓词所访问的属性进行预排序
 
+### 问题
+
+下面的所有索引都是为了锁定满足谓词条件的<mark style="color:red;">**offset**</mark>，以此实现data skip
+
+但是为什么扫描一遍索引的时间，比扫描数据短？？？（这里的列数据大多都是数字而不是字符）
+
 ### Zone Maps
 
 * 更像是一个过滤器（yes/no），而不是索引（where）
@@ -528,9 +534,13 @@ SIMD 比较运算符生成一个位掩码，指定哪些元组满足谓词（见
 
 Column Imprints 和 Column Sketches 就是这样的技术
 
+### Column Sketches
 
+### 总结
 
-
+* Zone Maps are the most widely used method to accelerate sequential scans.&#x20;
+* Bitmap indexes are more common in NSM DBMSs than columnar OLAP systems. （因为这些NSM系统希望从位图索引中获得类似于列存的好处，减少无用数据的读入，而他们并不想真正使用一个列式存储引擎来代替行存）
+* We’re ignoring multi-dimensional and inverted indexes...&#x20;
 
 
 
