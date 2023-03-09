@@ -113,7 +113,7 @@ Intermediate Data
 #### **Shared disk**
 
 * 每个节点都访问一个单一的逻辑磁盘，但是每个节点持有自己的cpu和内存
-* Instead of a POSIX API, the DBMS accesses disk using a userspace API.
+* Instead of a POSIX API, the DBMS accesses disk using a userspace API.（比如云对象存储提供的用户API）
 
 #### **比较**
 
@@ -187,7 +187,7 @@ andy认为没必要从零开始实现一个数据库，分为组件并开源化�
 
 这里每行数据前的小header表示该行数据中是否有null等信息，并不存储该表的schema；而每个page前面的header可能会存储校验和，数据库版本等信息
 
-<figure><img src=".gitbook/assets/image (1) (1).png" alt=""><figcaption><p>NSM示意图</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (1) (1) (1).png" alt=""><figcaption><p>NSM示意图</p></figcaption></figure>
 
 **优缺点**
 
@@ -222,7 +222,7 @@ andy认为没必要从零开始实现一个数据库，分为组件并开源化�
 * offsets：直接用偏移量
 * embedded ids：列中每个值前面，都存放对应的tuple id
 
-<figure><img src=".gitbook/assets/image (4).png" alt=""><figcaption></figcaption></figure>
+<figure><img src=".gitbook/assets/image (4) (1).png" alt=""><figcaption></figcaption></figure>
 
 **变长数据的处理：**直接填充为定长，太浪费；字典压缩，将变长数据转为定长（适合重复数据较多）
 
@@ -242,7 +242,7 @@ andy认为没必要从零开始实现一个数据库，分为组件并开源化�
 * 水平分区，分为若干个行组
 * global header包含行组的偏移量；每个行组都有自己的header，存储该行组的相关内容，如压缩方法等信息
 
-<figure><img src=".gitbook/assets/image (4) (1).png" alt=""><figcaption><p>PAX示意图</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (4) (1) (1).png" alt=""><figcaption><p>PAX示意图</p></figcaption></figure>
 
 #### TRANSPARENT HUGE PAGES (THP)
 
@@ -283,7 +283,7 @@ Example: Store in an exact, variable-length binary representation with additiona
 
 所有的更新先进入NSM，最终复制到DSM镜像
 
-<figure><img src=".gitbook/assets/image (6).png" alt=""><figcaption><p>FRACTURED MIRRORS 示意图</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (6) (1).png" alt=""><figcaption><p>FRACTURED MIRRORS 示意图</p></figcaption></figure>
 
 #### DELTA STORE
 
@@ -295,7 +295,7 @@ Example: Store in an exact, variable-length binary representation with additiona
 
 事务型操作面向行存；分析型查询可能需要行存和列存进行配合
 
-<figure><img src=".gitbook/assets/image (6) (1).png" alt=""><figcaption><p>DELTA STORE 示意图</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (6) (1) (1).png" alt=""><figcaption><p>DELTA STORE 示意图</p></figcaption></figure>
 
 ### DATABASE PARTITIONING
 
@@ -320,15 +320,15 @@ DBMS可以在物理上 （shared nothing）或逻辑上（shared disk），对�
 * Ranges
 * Predicates
 
-<figure><img src=".gitbook/assets/image (3).png" alt=""><figcaption><p>水平分区示意图</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (3) (2).png" alt=""><figcaption><p>水平分区示意图</p></figcaption></figure>
 
 #### LOGICAL PARTITIONING
 
-<figure><img src=".gitbook/assets/image (5).png" alt=""><figcaption><p>逻辑分区示意图</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (5) (2).png" alt=""><figcaption><p>逻辑分区示意图</p></figcaption></figure>
 
 #### PHYSICAL PARTITIONING
 
-<figure><img src=".gitbook/assets/image (1).png" alt=""><figcaption><p>物理分区示意图</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (1) (1).png" alt=""><figcaption><p>物理分区示意图</p></figcaption></figure>
 
 #### PARTING THOUGHTS
 
@@ -344,8 +344,10 @@ DBMS可以在物理上 （shared nothing）或逻辑上（shared disk），对�
 
 * TP使用索引来查找单个tuple，而不进行连续扫描（适合低选择性的谓词；小数量tuple的查询）
 * TP索引需要支持数据增量更新
+* TP底层更多是行存
 * AP索引不需要支持单个tuple的查询，通常是连续扫描
 * AP索引假设数据文件是只读的/不可变的
+* AP底层更多是列存
 
 #### 连续扫描的优化方法
 
@@ -381,14 +383,14 @@ DBMS可以在物理上 （shared nothing）或逻辑上（shared disk），对�
 * Clustering / Sorting
   * 表是否根据查询的谓词所访问的属性进行预排序
 
-#### Zone Maps
+### Zone Maps
 
 * 更像是一个过滤器（yes/no），而不是索引（where）
 * 事先计算出一块tuples上某个属性值的所有聚合结果
 * 最初称为Small Materialized Aggregates (SMA)
 * DBMS自动创建/维护这种元数据
 
-<figure><img src=".gitbook/assets/image.png" alt=""><figcaption><p>zone maps示意图</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (8).png" alt=""><figcaption><p>zone maps示意图</p></figcaption></figure>
 
 总结：
 
@@ -397,6 +399,218 @@ DBMS可以在物理上 （shared nothing）或逻辑上（shared disk），对�
   * 范围过小，查询执行时需要检查过多的zone maps
 * 如果该列上的数据太随机，也不适合（预先排序的话，效果会变好）
   * 比如对该列划分为多个blocks，如果每个blocks的zone maps都一样，那么查询时还是要遍历所有的tuples，跳过的数据很少
+
+### BITMAP INDEXES
+
+* 为某一列中的每个unique值，存储一个单独的位图
+* 位图中的第i个位置，对应table中的第i个tuple
+* Typically segmented into chunks to avoid allocating large blocks of contiguous memory
+  * Example: One per row group in PAX
+
+<figure><img src=".gitbook/assets/image (14).png" alt=""><figcaption><p>位图索引示意图</p></figcaption></figure>
+
+缺点：
+
+* 如果某一列中unique值较多的话，很显然，使用位图索引会造成巨大的浪费
+
+**设计方案**：
+
+* **Encoding Scheme**
+  * How to represent and organize data in a Bitmap
+* **Compression**
+  * How to reduce the size of sparse Bitmaps
+
+#### BITMAP INDEX: ENCODING
+
+* Equality Encoding
+  * Basic scheme with one Bitmap per unique value（原始和基础的）
+* Range Encoding
+  * Use one Bitmap per interval instead of one per value（eg:  PostgreSQL BRIN）
+  * 为某个区间建立位图，而不是每个unique值
+* Hierarchical Encoding
+  * Use a tree to identify empty key ranges
+* Bit-sliced Encoding
+  * Use a Bitmap per bit location across all values
+
+**HIERARCHICAL ENCODING**
+
+* 采用树的结构，减少位图的存储空间
+* 0下面的叶子不用存储
+
+<figure><img src=".gitbook/assets/image (10).png" alt=""><figcaption><p>Hierarchical Encoding 示意图</p></figcaption></figure>
+
+**BIT-SLICED ENCODING**
+
+* 为每一个bit构建一个位图
+* 在查询中，做谓词匹配时，也根据位图逐一匹配
+
+<figure><img src=".gitbook/assets/image (1).png" alt=""><figcaption><p><strong>BIT-SLICED构造 示意图</strong></p></figcaption></figure>
+
+<figure><img src=".gitbook/assets/image (6).png" alt=""><figcaption><p><strong>BIT-SLICED查询 示意图</strong></p></figcaption></figure>
+
+总结：
+
+* Bit-slices可用于高效的聚合计算
+* 使用Hamming Weight计算SUM(attr)&#x20;
+  * 英特尔在2008年增加了POPCNT SIMD指令，从硬件上加速了Hamming Weight计算
+
+### BITWEAVING
+
+目的：专为使用 **SIMD** 对压缩数据进行高效谓词评估而设计的列式数据库的替代存储布局
+
+特点
+
+* Order-preserving 字典编码
+* Bit-level parallelization
+* 只需要通用指令（no scatter/gather）
+
+#### STORAGE LAYOUTS
+
+* Approach #1: Horizontal
+  * Row-oriented storage at the bit-level
+* Approach #2: Vertical
+  * Column-oriented storage at the bit-level
+* 两种方案都要首先划分segment，在segment内部做差异化存储和查询
+
+#### **Horizontal**
+
+对某一列的数据进行讨论
+
+<figure><img src=".gitbook/assets/image (3).png" alt=""><figcaption><p>Horizontal构造 示意图</p></figcaption></figure>
+
+t0与t4是连续存储的，下面的查询过程解释了为什么要这样放置数据（按字处理）
+
+<figure><img src=".gitbook/assets/image (4).png" alt=""><figcaption><p>Horizontal查询 示意图 1</p></figcaption></figure>
+
+总结：
+
+* 对于每个字的操作仅需要三种类型的指令
+* 可以用于任意的字长度和编码长度
+* 其他的谓词操作在文章有有所提及
+
+<figure><img src=".gitbook/assets/image (2).png" alt=""><figcaption><p>Horizontal查询 示意图 2</p></figcaption></figure>
+
+**SELECTION VECTOR**
+
+SIMD 比较运算符生成一个位掩码，指定哪些元组满足谓词（见Horizontal查询 示意图 2右上角）
+
+但是DBMS 必须将其转换为列偏移量
+
+方案
+
+* Iteration（比较慢）
+* Pre-computed Positions Table
+
+<figure><img src=".gitbook/assets/image (15).png" alt=""><figcaption><p>Iteration 示意图</p></figcaption></figure>
+
+<figure><img src=".gitbook/assets/image.png" alt=""><figcaption><p>Pre-computed Positions Table 示意图</p></figcaption></figure>
+
+#### **VERTICAL**
+
+对比Horizontal；注意segment2中后面的填充
+
+<figure><img src=".gitbook/assets/image (12).png" alt=""><figcaption><p>VERTICAL构造 示意图</p></figcaption></figure>
+
+<figure><img src=".gitbook/assets/image (13).png" alt=""><figcaption><p>VERTICAL查询 示意图</p></figcaption></figure>
+
+总结：
+
+* 可以像在 BitMap 索引中一样执行早期修剪
+  * Hierarchical Encoding 与 BIT-SLICED，都存在类似于VERTICAL的早期剪枝（第二次SIMD只需要检查t0、t3、t6）
+  * 但是Horizontal中不能
+* 有时不用检查所有的向量，上图中向量v2就没有检查的必要
+
+### COLUMN IMPRINTS
+
+上述所有的data skip技术/AP索引，都是存储exact/loseless representations of columnar data
+
+有些情况，可以放弃一些accuracy，换取更快的执行速度（此时，必须能避免假阳性）
+
+Column Imprints 和 Column Sketches 就是这样的技术
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&#x20;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

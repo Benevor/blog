@@ -90,7 +90,7 @@ lightning不属于单一的TP/AP系统，因为它的分析系统是<mark style=
 * Lightning：支持读优化的副本
   * Changepump
 
-<figure><img src="../.gitbook/assets/image (2).png" alt=""><figcaption><p>系统示意图</p></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (2) (2).png" alt=""><figcaption><p>系统示意图</p></figcaption></figure>
 
 ### 建立列存副本的方式：CDC
 
