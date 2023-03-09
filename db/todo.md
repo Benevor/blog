@@ -8,6 +8,7 @@
 * leveldb、influxdb、etcd、duckdb
 * [https://www.sobyte.net/post/2022-08/lsm-tree-leveldb/](https://www.sobyte.net/post/2022-08/lsm-tree-leveldb/)
 * 阿里云sls日志存储
+* ob的rust时序数据库：[https://mp.weixin.qq.com/s/xbOkKDvEoJj\_WF9iE4z4ow](https://mp.weixin.qq.com/s/xbOkKDvEoJj\_WF9iE4z4ow)
 * zhan老师PPT课件
 
 
