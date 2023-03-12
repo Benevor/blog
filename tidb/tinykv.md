@@ -131,3 +131,14 @@ apply
 * 更新router和storeMeta信息
 * 持久化region信息
 * 如果本节点是leader，还要通知调度器，更新信息
+
+问题：
+
+3b:5-4-5的讨论
+
+3c:到底是哪里的RegionHeartbeat()
+
+```
+Every scheduler should have implemented the Scheduler interface, which you can find in /scheduler/server/schedule/scheduler.go. The Scheduler will use the return value of GetMinInterval as the default interval to run the Schedule method periodically. If it returns null (with several times retry), the Scheduler will use GetNextInterval to increase the interval. By defining GetNextInterval you can define how the interval increases. If it returns an operator, the Scheduler will dispatch these operators as the response of the next heartbeat of the related region.
+没懂
+```
