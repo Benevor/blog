@@ -222,7 +222,7 @@ andy认为没必要从零开始实现一个数据库，分为组件并开源化�
 * offsets：直接用偏移量
 * embedded ids：列中每个值前面，都存放对应的tuple id
 
-<figure><img src=".gitbook/assets/image (4) (1).png" alt=""><figcaption></figcaption></figure>
+<figure><img src=".gitbook/assets/image (4) (1) (2).png" alt=""><figcaption></figcaption></figure>
 
 **变长数据的处理：**直接填充为定长，太浪费；字典压缩，将变长数据转为定长（适合重复数据较多）
 
@@ -336,7 +336,7 @@ DBMS可以在物理上 （shared nothing）或逻辑上（shared disk），对�
 * 虽然现实世界的表格中数字居多，但是数据库存储中占据空间的是字符串数据
 * 现代列存系统运行很快，以至于人们不会对数据仓库的格式进行反规范化（对于DBA设计scheme的需求不再那么强烈）
 
-## 04
+## 04：速度
 
 ### AP索引与连续扫描
 
@@ -396,7 +396,7 @@ DBMS可以在物理上 （shared nothing）或逻辑上（shared disk），对�
 * 最初称为Small Materialized Aggregates (SMA)
 * DBMS自动创建/维护这种元数据
 
-<figure><img src=".gitbook/assets/image (8).png" alt=""><figcaption><p>zone maps示意图</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (8) (1).png" alt=""><figcaption><p>zone maps示意图</p></figcaption></figure>
 
 总结：
 
@@ -452,7 +452,7 @@ DBMS可以在物理上 （shared nothing）或逻辑上（shared disk），对�
 
 <figure><img src=".gitbook/assets/image (1) (1).png" alt=""><figcaption><p><strong>BIT-SLICED构造 示意图</strong></p></figcaption></figure>
 
-<figure><img src=".gitbook/assets/image (6).png" alt=""><figcaption><p><strong>BIT-SLICED查询 示意图</strong></p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (6) (2).png" alt=""><figcaption><p><strong>BIT-SLICED查询 示意图</strong></p></figcaption></figure>
 
 总结：
 
@@ -509,7 +509,7 @@ SIMD 比较运算符生成一个位掩码，指定哪些元组满足谓词（见
 
 <figure><img src=".gitbook/assets/image (15) (1).png" alt=""><figcaption><p>Iteration 示意图</p></figcaption></figure>
 
-<figure><img src=".gitbook/assets/image (15).png" alt=""><figcaption><p>Pre-computed Positions Table 示意图</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (15) (2).png" alt=""><figcaption><p>Pre-computed Positions Table 示意图</p></figcaption></figure>
 
 #### **VERTICAL**
 
@@ -534,7 +534,7 @@ SIMD 比较运算符生成一个位掩码，指定哪些元组满足谓词（见
 
 Column Imprints 和 Column Sketches 就是这样的技术
 
-<figure><img src=".gitbook/assets/image (5).png" alt=""><figcaption><p>Column Imprints 示意图</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (5) (3).png" alt=""><figcaption><p>Column Imprints 示意图</p></figcaption></figure>
 
 ### Column Sketches
 
@@ -543,9 +543,9 @@ Column Imprints 和 Column Sketches 就是这样的技术
 * 需要考虑数据分布和紧凑性之间的权衡
 * 给频繁数据分配unique编码，以避免误报
 
-<figure><img src=".gitbook/assets/image.png" alt=""><figcaption><p>Column Sketches构造 示意图</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (1).png" alt=""><figcaption><p>Column Sketches构造 示意图</p></figcaption></figure>
 
-<figure><img src=".gitbook/assets/image (4).png" alt=""><figcaption><p>Column Sketches查询 示意图</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (4) (1).png" alt=""><figcaption><p>Column Sketches查询 示意图</p></figcaption></figure>
 
 ### 总结
 
@@ -553,7 +553,7 @@ Column Imprints 和 Column Sketches 就是这样的技术
 * Bitmap indexes are more common in NSM DBMSs than columnar OLAP systems. （因为这些NSM系统希望从位图索引中获得类似于列存的好处，减少无用数据的读入，而他们并不想真正使用一个列式存储引擎来代替行存）
 * We’re ignoring multi-dimensional and inverted indexes...&#x20;
 
-## 05
+## 05：空间
 
 ### 数据压缩的前提
 
@@ -603,9 +603,9 @@ Column Imprints 和 Column Sketches 就是这样的技术
 #### Run-length Encoding
 
 * 用三元组的形式存储列值和位置信息，以此来实现压缩
-* 需要对列进行排序，以实现最大化的压缩（如果没两个列值都不相同的话，压缩率是非常差的）（下面的列存根据lit排序后优化效果会好很多）
+* 需要对列进行排序，以实现最大化的压缩（如果某列中每两个相邻值都不相同的话，压缩率是非常差的）（下面的列存根据lit排序后优化效果会好很多）
 
-<figure><img src=".gitbook/assets/image (1).png" alt=""><figcaption><p>RUN-LENGTH ENCODING 示意图</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (1) (2).png" alt=""><figcaption><p>RUN-LENGTH ENCODING 示意图</p></figcaption></figure>
 
 #### Dictionary Encoding
 
@@ -640,19 +640,98 @@ Column Imprints 和 Column Sketches 就是这样的技术
 没有一个哈希函数可以帮助我们同时完成编码和解码
 
 1. Order-Preserving encoding
-   1. 排序后的编码和排序后的原始值保持一致的顺序（谓词评估）
+   * 排序后的编码和排序后的原始值保持一致的顺序（方便在压缩数据上进行谓词评估）
 
+<figure><img src=".gitbook/assets/image (16).png" alt=""><figcaption><p>Order-Preserving encoding 示意图</p></figcaption></figure>
 
+**DICTIONARY DATA STRUCTURES**
 
+1. Array
+   * one array of variable length strings and another array with pointers that maps to string offsets
+   * Expensive to update so only usable in immutable files
+   * ![](<.gitbook/assets/image (7).png>)
+2. Hash Table
+   * Fast and compact
+   * Unable to support range and prefix queries
+3.  B+Tree
 
+    * Slower than a hash table and takes more memory
+    * Can support range and prefix queries
 
+    <figure><img src=".gitbook/assets/image (17).png" alt=""><figcaption></figcaption></figure>
 
+**EXPOSING DICTIONARY TO DBMS**
+
+如果没有直接访问压缩字典文件的API，意味着DBMS无法在解压之前执行谓词下推并直接对压缩后的数据进行操作
 
 #### Bitmap Encoding
 
+如果某个列的基数较小（值的种类少），可以用位图来减少存储空间
+
+<figure><img src=".gitbook/assets/image (9).png" alt=""><figcaption><p>位图编码 示意图</p></figcaption></figure>
+
+**BITMAP INDEX: COMPRESSION / 位图压缩**
+
+1. General Purpose Compression
+   * 对位图使用通用的压缩算法
+   * 缺点：必须对数据进行解压才能执行查询操作
+2. Byte-aligned Bitmap Codes
+   * Gap Byte: All the bits are 0s
+   * Tail Byte: Some bits are 1s.
+   * chunk ：consists of some Gap Bytes followed by some Tail Bytes（压缩单位，大小不定）
+     * Gap Bytes are compressed with RLE
+     * Tail Bytes are stored uncompressed unless it consists of only 1-byte or has only one non-zero bit
+   * Oracle's BBC有些过时了，虽然他提供了很好的压缩结果，但由于过多的分支判断，速度较慢
+   * Word-Aligned Hybrid (WAH) encoding是BBC的一个变体，有着更好的性能
+   * 但是BBC和WAH都不提供随机访问：即如果你想知道一个值是否在列中，必须从头开始解压
+
+<figure><img src=".gitbook/assets/image (15).png" alt=""><figcaption><p>Byte-aligned Bitmap Codes 示意图</p></figcaption></figure>
+
+<figure><img src=".gitbook/assets/image (5).png" alt=""><figcaption><p>Byte-aligned Bitmap Codes 示意图</p></figcaption></figure>
+
+3. Roaring Bitmaps
+   * 将 32 位整数存储在紧凑的二级索引数据结构中
+     * 密集块使用位图存储
+     * 稀疏块使用16位整数的压缩数组
+
+<figure><img src=".gitbook/assets/image (8).png" alt=""><figcaption><p>Roaring Bitmaps示意图</p></figcaption></figure>
+
 #### Delta Encoding
 
+增量存储：记录同一列中彼此跟随的值之间的差异
+
+* Store base value in-line or in a separate look-up table
+* 结合run-length encoding，可以获得更好的压缩率
+
+<figure><img src=".gitbook/assets/image (4).png" alt=""><figcaption><p>Delta Encoding示意图</p></figcaption></figure>
+
 #### Bit Packing
+
+* 如果一列的取值都小于所给数据类型的上限，那么就减少数据表示所用的bit数量
+* Use bit-shifting tricks to operate on multiple values in a single word（Like in BitWeaving/Vertical）
+* ![](<.gitbook/assets/image (6).png>)
+
+**MOSTLY ENCODING**
+
+* bit packing的一种变体
+* 当属性的值“大部分”小于该数据类型的最大size时，用较小的数据类型存储它们
+* 无法压缩的剩余值以原始形式存储
+
+<figure><img src=".gitbook/assets/image.png" alt=""><figcaption><p>mostly encoding示意图</p></figcaption></figure>
+
+#### 总结
+
+* DBMS在压缩数据上执行谓词判断后，需要对判断后的数据进行解压，以从scan operator传递给其他的operator
+  * 比如join操作的两个表可能采用不同的压缩方案，所以只能对解压后的数据进行处理
+  * DBMS（通常）在查询执行期间不会重新压缩数据。否则，系统需要在整个执行引擎中嵌入解压逻辑
+* 字典编码并不总是最有效的压缩方案，但它是最常用的
+* &#x20;DBMS 可以结合不同的方法来实现更好的压缩
+
+
+
+
+
+
 
 
 
