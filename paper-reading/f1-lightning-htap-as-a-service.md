@@ -122,6 +122,114 @@ lightning不属于单一的TP/AP系统，因为它的分析系统是<mark style=
 
 ### 主要组件
 
+* data storage
+  * 在分布式文件系统上存储读优化的文件
+  * apply change
+  * read data
+  * background maintenance operations like data compaction
+* change replication
+  * 跟踪TP数据库上的事务变更，对其进行分区后分发到对应的数据存储服务器
+  * 日志重放
+* metadata database
+  * 存储表示data storage和change replication组件状态的元数据
+* lightning masters
+  * 协调其他服务器的操作，并维护Lightning-wide的状态
+
+### 4.1 Read semantics
+
+* Lightning提供<mark style="color:red;">**基于快照隔离的MVCC**</mark>。所有对lightning的query都有一个时间戳，Lightning返回的数据与OLTP数据库中截至该时间戳的数据一致
+* 由于Lightning<mark style="color:red;">**异步**</mark>应用TP数据库的变更日志，所以在TP数据库中所做变更对Lightning上的查询可见之前存在一段延迟（Lightning可以设置查询涉及过去多久的上限）
+* 安全时间戳：可通过lightning查询的时间戳（最大安全时戳，最小安全时戳）
+  * 最大安全时戳：表示Lightning已经接收了该时间戳之前的所有变更
+  * 最小安全时戳：表示可以查询的最旧版本的时间戳
+  * 查询窗口：Lightning维护的安全时间戳的范围（Google生态中，通常为10小时）
+  * Lightning拥有一个从最小安全时间戳开始的数据库单版本快照，以及一个从该时间点到最大安全时间戳的多版本记录（<mark style="color:red;">**？？？**</mark>）
+
+### 4.2 Tables and deltas
+
+* lightning将数据存储在<mark style="color:red;">**Lightning tables**</mark>中。数据库表、索引和视图在lightning中均视为物理表
+* 每个Lightning tables都会划分为多个partitions，每个<mark style="color:red;">**partition**</mark>都会存储在<mark style="color:red;">**multi-component LSM-Tree**</mark>中
+* <mark style="color:red;">**delta**</mark>：LSM树中的一个component；包含对应lightning表的partial row versions
+* <mark style="color:red;">**partial row version**</mark> 由相应行的主键和TP数据库中提交该version的时戳进行标识
+
+Lightning存储的三种<mark style="color:red;">**version**</mark>，对应于对源数据所做的改变：
+
+* Inserts: 包含所有列的值. 每一行的第一个 version 就是一个 insert
+* Updates: 更新包含至少一个非主键列的值，并且忽略未修改列的值
+* Deletes: 不包含任何非主键列的值，墓碑机制，用于标记特定时戳之后的读不应该读到该行数据
+
+delta维护
+
+* permissive：单个delta可以包含同一个key的多个versions，同一个partition的不同的deltas可以包含相同的version
+* 单个delta中，partial row versions由\<key, timestamp>唯一标识，为了加速查找，delta以（key ASC, timestamp DESC）的方式进行排序
+
+### 4.3 Memory-resident deltas
+
+* Lightning提取TP变更后，首先将生成的partial row versions写到一个 memory-resident, row-wise B-tree（牺牲部分读来加速写）
+* memory-resident delta最多有两个写入者，有若干读者
+* 对于每个partition，都有一个线程负责应用 TP事务日志的变更
+* 后台线程定期GC，移除不在查询窗口中的versions
+* lightning使用B-Tree中的copy-on-write（？？？）机制，来实现这些并发需求
+* 数据一旦被写到Memory-resident deltas，就是对<mark style="color:red;">**query可见**</mark>的了，但要遵守<mark style="color:red;">**Changepump提供的一致性协议**</mark>
+* 但是写入内存并不持久，Lightning不维护自己的 write-ahead log（一旦系统断电，内存的delta将会丢失，但是lightning将会通过重放TP日志来恢复）
+  * 但是通过事务日志进行几小时变更的重放是不切实际的。因此，lightning定期将内存数据生成checkpoint并持久化到磁盘（原样持久化B树），磁盘中的checkpoint不可读，必须加载到内存
+  * 即磁盘中的checkpoint仅是一个备份功能，用于断电恢复
+* 当delta太大时，lightning会将其写入磁盘。与checkpoint不同，这个操作包含一个<mark style="color:red;">**转置**</mark>，将内存行存转化为列存
+  * 现有的查询将继续从内存驻留的delta读取数据，直到落盘完成，此时，查询将透明地切换到从磁盘（读优化的列存）中读取
+  * 这里的磁盘存储是可供查询读取的，且是行存。因为与checkpoint的功能不同
+
+### 4.4 Disk-resident deltas
+
+* 包含了lightning中的大部分数据，且以读优化列式文件格式进行存储
+* 每个delta文件存储了两部分数据
+  * data part：以PAX的格式进行存储
+  * index part：主键上的稀疏B树索引，叶子用来track每个行族的key范围，索引比数据小很多，通常缓存在lightning server中
+* 这样的设计是在范围查找和点查中找到了平衡
+
+### 4.5 Delta merging
+
+* Lightning存储的 partial row versions 可能分散在多个delta中（内存或磁盘），因此query需要 merge delta，集合 row version，来获得最终的查询结果（什么时候才要merge？？？）
+* Delta merging有两个逻辑步骤
+  * merging
+    * 删除不同delta中的重复变更，并将不同的version拷贝到新的delta中
+    * 由于源delta和新delta不一定使用同一架构，因此merging在copy row时执行。
+  * collapsing
+    * 将同一个key的多个version合并为同一个version
+* 这个过程采用了标准LSM逻辑的向量化版本（？？？），结合了merge和aggregate运算符。
+  * 预处理的一步：列出所有的需要参与merge的delta
+  * 如果存在主键上的谓词，则可以在合并过程中省略不匹配的version
+  * 一旦确定了必须参与合并的delta，Lightning将分两个阶段执行k路合并，这两个阶段将反复应用
+    * merge plan generation
+      * 从k个输入的每一个中读取一个键块（明确本轮可以collapsed的key范围）
+      * 并确定merge plan中需要collapse的version，以及顺序
+      * 由于单个主键的多个row versions可以包含在单个delta中，Lightning必须注意它只折叠没有漏洞的完整历史（看例子）
+      * collapsing groups、escrow buffer（？？？）
+    * merge plan application（？？？）
+      * 逐列应用，将行值复制并聚合到适合的缓冲中
+      * 然后Lightning刷新输出缓冲区，并将 escrow buffer 用作下一轮的额外输入。也就是说，two-way merge 将具有第三个输入，该输入包含除第一轮之外的所有轮的single row version，但逻辑在其他方面保持不变。
+
+例子：
+
+<figure><img src="../.gitbook/assets/image (2).png" alt=""><figcaption><p>delta merge示例</p></figcaption></figure>
+
+Lightning只能折叠密钥和时间戳小于\<K2, ts : 125>，并且只有其键小于K2的collapsed rows才能被包括在这一轮的输出中。这是因为D1可能具有时间戳在100和125之间的K2的附加版本，但是直到从D1读取下一批才能确定这一点（ts降序排列）。因此，可以在单轮中折叠的version范围的上限是所考虑的所有块中的最大密钥的最小值。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

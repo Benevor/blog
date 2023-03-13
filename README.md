@@ -413,7 +413,7 @@ DBMS可以在物理上 （shared nothing）或逻辑上（shared disk），对�
 * Typically segmented into chunks to avoid allocating large blocks of contiguous memory
   * Example: One per row group in PAX
 
-<figure><img src=".gitbook/assets/image (14).png" alt=""><figcaption><p>位图索引示意图</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (14) (1).png" alt=""><figcaption><p>位图索引示意图</p></figcaption></figure>
 
 缺点：
 
@@ -590,7 +590,7 @@ Column Imprints 和 Column Sketches 就是这样的技术
 
 在mod log中应用一些updates
 
-<figure><img src=".gitbook/assets/image (2).png" alt=""><figcaption><p>朴素压缩示意图</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (2) (4).png" alt=""><figcaption><p>朴素压缩示意图</p></figcaption></figure>
 
 缺点
 
@@ -717,7 +717,7 @@ Column Imprints 和 Column Sketches 就是这样的技术
 * 当属性的值“大部分”小于该数据类型的最大size时，用较小的数据类型存储它们
 * 无法压缩的剩余值以原始形式存储
 
-<figure><img src=".gitbook/assets/image.png" alt=""><figcaption><p>mostly encoding示意图</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (14).png" alt=""><figcaption><p>mostly encoding示意图</p></figcaption></figure>
 
 #### 总结
 

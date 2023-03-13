@@ -151,7 +151,7 @@ snap返回region的指针，导致出错
 问题：为什么拿着过时的region进行scan不会出问题
 ```
 
-3b两次汇报的笔记本记录（还有一次是纸质记录的）
+3b两次汇报的笔记本记录（还有一次是纸质记录的）；同学们的ppt
 
 [https://docs.qq.com/pdf/DQVl2ZlhBYllkR2lR?](https://docs.qq.com/pdf/DQVl2ZlhBYllkR2lR?)
 
