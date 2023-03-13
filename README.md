@@ -328,7 +328,7 @@ DBMS可以在物理上 （shared nothing）或逻辑上（shared disk），对�
 
 #### PHYSICAL PARTITIONING
 
-<figure><img src=".gitbook/assets/image (1) (1).png" alt=""><figcaption><p>物理分区示意图</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (1) (1) (2).png" alt=""><figcaption><p>物理分区示意图</p></figcaption></figure>
 
 #### PARTING THOUGHTS
 
@@ -450,7 +450,7 @@ DBMS可以在物理上 （shared nothing）或逻辑上（shared disk），对�
 * 为每一个bit构建一个位图
 * 在查询中，做谓词匹配时，也根据位图逐一匹配
 
-<figure><img src=".gitbook/assets/image (1).png" alt=""><figcaption><p><strong>BIT-SLICED构造 示意图</strong></p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (1) (1).png" alt=""><figcaption><p><strong>BIT-SLICED构造 示意图</strong></p></figcaption></figure>
 
 <figure><img src=".gitbook/assets/image (6).png" alt=""><figcaption><p><strong>BIT-SLICED查询 示意图</strong></p></figcaption></figure>
 
@@ -486,7 +486,7 @@ DBMS可以在物理上 （shared nothing）或逻辑上（shared disk），对�
 
 t0与t4是连续存储的，下面的查询过程解释了为什么要这样放置数据（按字处理）
 
-<figure><img src=".gitbook/assets/image (4).png" alt=""><figcaption><p>Horizontal查询 示意图 1</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (4) (2).png" alt=""><figcaption><p>Horizontal查询 示意图 1</p></figcaption></figure>
 
 总结：
 
@@ -494,7 +494,7 @@ t0与t4是连续存储的，下面的查询过程解释了为什么要这样放�
 * 可以用于任意的字长度和编码长度
 * 其他的谓词操作在文章有有所提及
 
-<figure><img src=".gitbook/assets/image (2).png" alt=""><figcaption><p>Horizontal查询 示意图 2</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (2) (3).png" alt=""><figcaption><p>Horizontal查询 示意图 2</p></figcaption></figure>
 
 **SELECTION VECTOR**
 
@@ -507,9 +507,9 @@ SIMD 比较运算符生成一个位掩码，指定哪些元组满足谓词（见
 * Iteration（比较慢）
 * Pre-computed Positions Table
 
-<figure><img src=".gitbook/assets/image (15).png" alt=""><figcaption><p>Iteration 示意图</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (15) (1).png" alt=""><figcaption><p>Iteration 示意图</p></figcaption></figure>
 
-<figure><img src=".gitbook/assets/image.png" alt=""><figcaption><p>Pre-computed Positions Table 示意图</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (15).png" alt=""><figcaption><p>Pre-computed Positions Table 示意图</p></figcaption></figure>
 
 #### **VERTICAL**
 
@@ -534,13 +534,131 @@ SIMD 比较运算符生成一个位掩码，指定哪些元组满足谓词（见
 
 Column Imprints 和 Column Sketches 就是这样的技术
 
+<figure><img src=".gitbook/assets/image (5).png" alt=""><figcaption><p>Column Imprints 示意图</p></figcaption></figure>
+
 ### Column Sketches
+
+思想：范围编码bitmap的一种变体，使用较小的草图编码指示某个范围内存在元组的值
+
+* 需要考虑数据分布和紧凑性之间的权衡
+* 给频繁数据分配unique编码，以避免误报
+
+<figure><img src=".gitbook/assets/image.png" alt=""><figcaption><p>Column Sketches构造 示意图</p></figcaption></figure>
+
+<figure><img src=".gitbook/assets/image (4).png" alt=""><figcaption><p>Column Sketches查询 示意图</p></figcaption></figure>
 
 ### 总结
 
 * Zone Maps are the most widely used method to accelerate sequential scans.&#x20;
 * Bitmap indexes are more common in NSM DBMSs than columnar OLAP systems. （因为这些NSM系统希望从位图索引中获得类似于列存的好处，减少无用数据的读入，而他们并不想真正使用一个列式存储引擎来代替行存）
 * We’re ignoring multi-dimensional and inverted indexes...&#x20;
+
+## 05
+
+### 数据压缩的前提
+
+#### 现实世界数据特征
+
+* 数据集往往具有高度偏斜的属性值分布（某些数值会频繁出现）
+* 数据集倾向于在同一元组的属性之间具有高度相关性
+
+#### 需求
+
+* 减少物理数据表示的大小，以增加每次io访问和处理值的数量
+* 权衡<mark style="color:red;">**查询速度**</mark>与<mark style="color:red;">**压缩率**</mark>
+* 目标：在保持压缩数据优点的前提下，加速基于压缩数据的查询执行
+
+#### 具体目标&#x20;
+
+1. 必须是lossless scheme（<mark style="color:red;">**无损**</mark>压缩）
+2. 必须产生<mark style="color:red;">**定长**</mark>的值
+3. 理想情况下，期望在查询执行期间尽可能地<mark style="color:red;">**推迟解压缩**</mark>（解压越晚越好，意味着在压缩数据上进行部分谓词评估）
+
+#### 压缩粒度
+
+1. Block-level：对表中某一块进行压缩(e.g., database page, RowGroup)
+2. Tuple-level：对某一行压缩（仅在NSM）
+3. Attribute-level：对某一行的某个属性值压缩（比如他是一个很大的文本属性值）
+4. Column-level：对一列或多列属性值压缩（仅在DSM）
+
+列存数据库常见：对列存上的块压缩，比如RowGroup
+
+### Naive Compression
+
+* 使用通用压缩算法；压缩范围仅限于作为输入的数据
+* 需要考虑：计算开销；压缩率与解压速度的权衡
+
+在mod log中应用一些updates
+
+<figure><img src=".gitbook/assets/image (2).png" alt=""><figcaption><p>朴素压缩示意图</p></figcaption></figure>
+
+缺点
+
+* 在压缩数据上读写，必须先解压整个page
+  * 比如使用了通用的字典压缩，但是对于DBMS而言，这是一个外部算法，无法获知其字典，也就无法基于字典，在压缩数据上进行部分谓词评估
+* 这些通用压缩算法也不考虑数据的高层含义和语义（对于他们而言，就是无差别的二进制数据）
+
+### COLUMNAR COMPRESSION
+
+#### Run-length Encoding
+
+* 用三元组的形式存储列值和位置信息，以此来实现压缩
+* 需要对列进行排序，以实现最大化的压缩（如果没两个列值都不相同的话，压缩率是非常差的）（下面的列存根据lit排序后优化效果会好很多）
+
+<figure><img src=".gitbook/assets/image (1).png" alt=""><figcaption><p>RUN-LENGTH ENCODING 示意图</p></figcaption></figure>
+
+#### Dictionary Encoding
+
+* 对于频繁出现的数据，使用更小的定长编码代替，并维护一个从编码到原始值的字典映射
+* 数据库中最广泛使用的本地压缩方案
+* 理想状态下，字典方案支持**点查**和**范围查询**的快速编码和解码
+
+**Dictionary Construction**
+
+1. All-At-Once（\*）
+   * 在指定时间，计算当下所有tuples的字典
+   * 新增加的tuple需要使用单独的字典，否则所有的tuples都要重新计算
+   * 在<mark style="color:red;">**不可变文件**</mark>中，实现起来很简单
+2. Incremental
+   * 对于新加入的tuples，使用原有的字典
+   * 可能需要对原有tuples都进行重新编码
+
+**Dictionary Scope**
+
+1. Block-level（\*）
+   * 字典范围仅覆盖单个table的子集
+   * 当DBMS涉及来自不同block数据的结合时，必须进行解压缩
+2. Table-level
+   * 字典范围覆盖整张表
+   * 压缩率更好，但是update的代价也更高
+3. Multi-Table
+   * 字典范围覆盖多个表（整张表或表的子集）
+   * 有时有助于join操作和集合操作
+
+**ENCODING / DECODING**
+
+没有一个哈希函数可以帮助我们同时完成编码和解码
+
+1. Order-Preserving encoding
+   1. 排序后的编码和排序后的原始值保持一致的顺序（谓词评估）
+
+
+
+
+
+
+
+#### Bitmap Encoding
+
+#### Delta Encoding
+
+#### Bit Packing
+
+
+
+
+
+
 
 
 
