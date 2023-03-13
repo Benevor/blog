@@ -142,3 +142,17 @@ apply
 Every scheduler should have implemented the Scheduler interface, which you can find in /scheduler/server/schedule/scheduler.go. The Scheduler will use the return value of GetMinInterval as the default interval to run the Schedule method periodically. If it returns null (with several times retry), the Scheduler will use GetNextInterval to increase the interval. By defining GetNextInterval you can define how the interval increases. If it returns an operator, the Scheduler will dispatch these operators as the response of the next heartbeat of the related region.
 没懂
 ```
+
+bug修复：
+
+```
+snap返回region的指针，导致出错
+
+问题：为什么拿着过时的region进行scan不会出问题
+```
+
+3b两次汇报的笔记本记录（还有一次是纸质记录的）
+
+[https://docs.qq.com/pdf/DQVl2ZlhBYllkR2lR?](https://docs.qq.com/pdf/DQVl2ZlhBYllkR2lR?)
+
+[https://docs.qq.com/pdf/DQUZnYnhqZWprUldz?](https://docs.qq.com/pdf/DQUZnYnhqZWprUldz?)
